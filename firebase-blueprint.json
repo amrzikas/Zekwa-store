@@ -1,0 +1,186 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Store items available for purchase",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Display name of the product" },
+        "description": { "type": "string", "description": "Detailed description" },
+        "price": { "type": "number", "description": "Price in USD" },
+        "category": { "type": "string", "description": "Product category" },
+        "stock": { "type": "integer", "description": "Available inventory" },
+        "material": { "type": "string", "description": "Product material" },
+        "images": { "type": "array", "description": "List of product image URLs" },
+        "rating": { "type": "number", "description": "Average user rating" },
+        "numReviews": { "type": "integer", "description": "Total number of reviews" },
+        "variants": { 
+          "type": "array", 
+          "description": "List of product variants (size, color, etc.)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["Size", "Color", "Material"] },
+              "options": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "category", "stock"]
+    },
+    "User": {
+      "title": "User Profile",
+      "description": "Public and private user information",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "admin"] },
+        "address": { "type": "object" },
+        "cart": { 
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string" },
+              "quantity": { "type": "integer" },
+              "variant": { "type": "object" }
+            }
+          }
+        },
+        "wishlist": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase records",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "processing", "shipped", "delivered", "cancelled"] },
+        "shippingAddress": { "type": "object" },
+        "paymentId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "items", "total", "status"]
+    },
+    "Review": {
+      "title": "Product Review",
+      "description": "User-submitted ratings and comments",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "userId", "rating"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product groupings",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "ShippingPlan": {
+      "title": "Shipping Plan",
+      "description": "Shipping rate configurations",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "deliveryTime": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price"]
+    },
+    "PaymentSettings": {
+      "title": "Payment Settings",
+      "description": "Configuration for payment methods",
+      "type": "object",
+      "properties": {
+        "cashOnDelivery": { "type": "boolean" },
+        "wallets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "number": { "type": "string" }
+            }
+          }
+        },
+        "instaPay": {
+          "type": "object",
+          "properties": {
+            "address": { "type": "string" },
+            "mobile": { "type": "string" },
+            "enabled": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "SiteContent": {
+      "title": "Site Content",
+      "description": "CMS for homepage sections and banners",
+      "type": "object",
+      "properties": {
+        "heroTitle": { "type": "string" },
+        "heroSubtitle": { "type": "string" },
+        "heroImage": { "type": "string" },
+        "banners": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "image": { "type": "string" },
+              "link": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "Page": {
+      "title": "Dynamic Page",
+      "description": "Content for information pages",
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["slug", "title", "content"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": { "schema": "Product", "description": "Collection of all products" },
+    "/users/{userId}": { "schema": "User", "description": "Account details for each user" },
+    "/orders/{orderId}": { "schema": "Order", "description": "Purchase history" },
+    "/reviews/{reviewId}": { "schema": "Review", "description": "Global reviews collection" },
+    "/categories/{categoryId}": { "schema": "Category", "description": "Product categories" },
+    "/shipping_plans/{planId}": { "schema": "ShippingPlan", "description": "Available shipping methods" },
+    "/settings/payment": { "schema": "PaymentSettings", "description": "Store-wide payment configuration" },
+    "/settings/content": { "schema": "SiteContent", "description": "Homepage configuration" },
+    "/pages/{pageId}": { "schema": "Page", "description": "Static/Information pages" }
+  }
+}

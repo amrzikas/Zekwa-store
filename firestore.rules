@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // --- Review Validation ---
+    function isValidReview(data) {
+      return data.keys().hasAll(['productId', 'userId', 'rating', 'comment', 'createdAt', 'userName'])
+        && data.productId is string && data.productId.size() <= 128
+        && data.userId == request.auth.uid
+        && data.rating is number
+        && data.rating >= 1 && data.rating <= 5
+        && data.comment is string
+        && data.comment.size() <= 1000
+        && data.userName is string
+        && data.userName.size() <= 100;
+    }
+
+    // --- Rules ---
+    match /reviews/{reviewId} {
+      // 8. Secure List Queries
+      allow list: if true; // Public reviews
+      allow get: if true;
+
+      allow create: if isSignedIn() 
+        && isValidReview(incoming())
+        && incoming().createdAt == request.time
+        // Relational consistency: prevent orphaned reviews
+        && exists(/databases/$(database)/documents/products/$(incoming().productId));
+
+      allow update: if (isSignedIn() && isOwner(existing().userId) && isValidReview(incoming())
+        && incoming().userId == existing().userId
+        && incoming().productId == existing().productId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'comment', 'updatedAt'])
+        && (!incoming().keys().hasAny(['updatedAt']) || incoming().updatedAt == request.time))
+        || isAdmin();
+
+      allow delete: if (isSignedIn() && isOwner(existing().userId)) || isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isOwner(existing().userId) || isAdmin();
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+        || (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == 'cancelled' && existing().status == 'pending');
+    }
+
+    match /shipping_plans/{planId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/payment {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/content {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /pages/{pageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && userId == request.auth.uid;
+      allow update: if isOwner(userId) && !incoming().keys().hasAny(['role']);
+      allow delete: if isAdmin();
+    }
+  }
+}

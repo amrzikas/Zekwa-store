@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  
+  --color-primary: #ff9900;
+  --color-secondary: #00bfa5;
+  --color-accent: #f50057;
+  --color-surface: #ffffff;
+  --color-bg: #f8f9fa;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-slate-800 antialiased;
+  }
+}
+
+.shadow-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-premium {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+}
+
+.btn-primary {
+  @apply bg-primary text-white font-bold px-6 py-2.5 rounded-full hover:brightness-95 transition-all flex items-center justify-center gap-2;
+}
+
+.badge-sale {
+  @apply bg-accent text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase;
+}
+
+.badge-new {
+  @apply bg-secondary text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase;
+}
